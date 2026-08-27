@@ -34,13 +34,18 @@ header('Content-Type: application/json');
 $method = $_SERVER['REQUEST_METHOD'];
 $action = trim($_GET['action'] ?? '');
 
+// The frontend deliberately sends JSON bodies WITHOUT a Content-Type header
+// (so the browser defaults to "text/plain", a CORS "simple" content-type)
+// rather than 'application/json' — the latter forces a CORS preflight
+// (OPTIONS) round-trip that iOS WebKit (Safari, and Chrome-on-iOS which is
+// WebKit under the hood) has shown a real quirk with, while Android/desktop
+// Chrome tolerate it fine. Skipping the preflight sidesteps that entirely.
+// So: parse the raw body as JSON regardless of what Content-Type says.
 $body = [];
-$contentType = strtolower((string)($_SERVER['CONTENT_TYPE'] ?? ''));
-if (in_array($method, ['POST', 'PUT'], true) && str_contains($contentType, 'application/json')) {
+if (in_array($method, ['POST', 'PUT'], true)) {
     $raw = file_get_contents('php://input');
-    if ($raw) $body = json_decode($raw, true) ?? [];
-} elseif (in_array($method, ['POST', 'PUT'], true)) {
-    $body = $_POST;
+    $decoded = $raw ? json_decode($raw, true) : null;
+    $body = is_array($decoded) ? $decoded : $_POST;
 }
 function bp(string $key, $default = '') {
     global $body;
