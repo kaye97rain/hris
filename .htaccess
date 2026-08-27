@@ -1,0 +1,15 @@
+Options -Indexes
+ServerSignature Off
+
+<IfModule mod_authz_core.c>
+  <FilesMatch "(^\.|\.env$|\.log$|\.sql$|^(config|configuration|db_auth|.*_db|.*_apply_indexes|.*_migrate|.*_scope|.*_directory|.*_rates|payroll_tax|payroll_verification|security)\.php$)">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+  <FilesMatch "(^\.|\.env$|\.log$|\.sql$|^(config|configuration|db_auth|.*_db|.*_apply_indexes|.*_migrate|.*_scope|.*_directory|.*_rates|payroll_tax|payroll_verification|security)\.php$)">
+    Order allow,deny
+    Deny from all
+  </FilesMatch>
+</IfModule>
