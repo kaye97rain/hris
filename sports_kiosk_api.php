@@ -16,15 +16,20 @@
 require_once __DIR__ . '/sports_db.php';
 
 sports_send_cors_headers();
-header('Content-Type: application/json');
 header('Cache-Control: no-store, private, max-age=0');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: no-referrer');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    // No Content-Type here on purpose: a 204 has no body, and Safari/WebKit
+    // (iOS — including "Chrome" on iOS, which is WebKit under the hood) is
+    // known to fail CORS preflight when a body-implying header like
+    // Content-Type is present on a contentless response — desktop Chrome
+    // tolerates it, WebKit doesn't.
     http_response_code(204);
     exit;
 }
+header('Content-Type: application/json');
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = trim($_GET['action'] ?? '');
