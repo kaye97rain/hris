@@ -1,9 +1,12 @@
 <?php
 // Read-only public sports-event attendance feed. Intentionally has no
 // authentication or write actions — same pattern as public_dtr_api.php.
-require_once __DIR__ . '/db_auth.php';
+// Deliberately does NOT require db_auth.php — nothing here calls into it,
+// and this file is meant to work standalone on a separate public domain
+// from the rest of HRIS.
 require_once __DIR__ . '/sports_db.php';
 
+sports_send_cors_headers();
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, private, max-age=0');
 header('Pragma: no-cache');

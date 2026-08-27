@@ -7,9 +7,15 @@
 // flag on every call, and the event's is_active flag is re-checked in
 // sports_scan_record() on every scan, so a revoked account or an event an
 // admin has since flagged done both fail cleanly even mid-session.
-require_once __DIR__ . '/db_auth.php';
+// Deliberately does NOT require db_auth.php — nothing here calls into it
+// directly, and this file is meant to work standalone on a separate public
+// domain from the rest of HRIS. (dtr_search_employees(), used by
+// manual_search below, still lazily pulls in db_auth.php/security.php on
+// its own for one helper function; that's fine — API/.env is already loaded
+// by then via sports_db.php's own require chain.)
 require_once __DIR__ . '/sports_db.php';
 
+sports_send_cors_headers();
 header('Content-Type: application/json');
 header('Cache-Control: no-store, private, max-age=0');
 header('X-Content-Type-Options: nosniff');

@@ -12,17 +12,34 @@
  * `hrmis` database).
  */
 
-require_once __DIR__ . '/dtr_db.php';
+require_once __DIR__ . '/dtr_db.php'; // pulls in leave_db.php, which loads API/.env itself
 
 /**
  * sports_scan.php / public_sports_dashboard.php are meant to be deployable on
  * a separate public domain from this API, so their fetch() calls are
- * cross-origin. CORS for that is already handled app-wide by
- * hrmis_apply_api_security() in security.php (required transitively via
- * db_auth.php, runs before any sports_*_api.php code executes) — it reads
- * the CORS_ALLOWED_ORIGINS env var. Add the scanner/dashboard domain(s)
- * there, not here.
+ * cross-origin. Handled self-contained here rather than via the app-wide
+ * hrmis_apply_api_security() in security.php/db_auth.php — that mechanism
+ * has an unrelated require-order bug (security.php can run its CORS check
+ * before .env is loaded, depending on what already required env_loader.php
+ * first) and touching db_auth.php has app-wide blast radius for a
+ * sports-only need. Neither sports_kiosk_api.php nor
+ * public_sports_dashboard_api.php requires db_auth.php at all.
+ * Reuses the CORS_ALLOWED_ORIGINS env var (same one security.php reads) so
+ * only one setting is needed regardless of which mechanism ends up handling
+ * a given request.
  */
+function sports_send_cors_headers(): void {
+    $allowed = array_values(array_filter(array_map('trim', explode(',', (string)(getenv('CORS_ALLOWED_ORIGINS') ?: '')))));
+    $origin = trim((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
+    if ($origin === '' || !in_array($origin, $allowed, true)) {
+        return;
+    }
+    header('Access-Control-Allow-Origin: ' . $origin);
+    header('Vary: Origin');
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type');
+    header('Access-Control-Max-Age: 600');
+}
 
 function sports_ensure_schema(PDO $conn): void {
     static $ready = false;
