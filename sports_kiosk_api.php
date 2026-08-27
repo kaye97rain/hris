@@ -10,7 +10,6 @@
 require_once __DIR__ . '/db_auth.php';
 require_once __DIR__ . '/sports_db.php';
 
-sports_send_cors_headers();
 header('Content-Type: application/json');
 header('Cache-Control: no-store, private, max-age=0');
 header('X-Content-Type-Options: nosniff');

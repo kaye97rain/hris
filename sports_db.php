@@ -16,28 +16,13 @@ require_once __DIR__ . '/dtr_db.php';
 
 /**
  * sports_scan.php / public_sports_dashboard.php are meant to be deployable on
- * a separate public domain from this API (this API stays wherever it already
- * has network access to the hrmis DB), so their fetch() calls are
- * cross-origin. Deny by default: with SPORTS_FRONTEND_ORIGIN unset, no
- * Access-Control-Allow-Origin header is sent and the browser blocks the
- * request — safer than a wildcard, which would let ANY site call these
- * endpoints. Set SPORTS_FRONTEND_ORIGIN in the API server's .env to the
- * scanner's real origin (comma-separate multiple, e.g. scanner + dashboard
- * domains if they differ), scheme + host, no trailing slash or path,
- * e.g. "https://sports.yourdomain.gov.ph".
+ * a separate public domain from this API, so their fetch() calls are
+ * cross-origin. CORS for that is already handled app-wide by
+ * hrmis_apply_api_security() in security.php (required transitively via
+ * db_auth.php, runs before any sports_*_api.php code executes) — it reads
+ * the CORS_ALLOWED_ORIGINS env var. Add the scanner/dashboard domain(s)
+ * there, not here.
  */
-function sports_send_cors_headers(): void {
-    $allowed = array_values(array_filter(array_map('trim', explode(',', (string)(getenv('SPORTS_FRONTEND_ORIGIN') ?: '')))));
-    $origin = trim((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
-    if ($origin === '' || !in_array($origin, $allowed, true)) {
-        return;
-    }
-    header('Access-Control-Allow-Origin: ' . $origin);
-    header('Vary: Origin');
-    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type');
-    header('Access-Control-Max-Age: 600');
-}
 
 function sports_ensure_schema(PDO $conn): void {
     static $ready = false;
