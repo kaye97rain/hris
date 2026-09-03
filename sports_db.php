@@ -145,9 +145,20 @@ function sports_ensure_schema(PDO $conn): void {
     $ready = true;
 }
 
-/** No manual session picker: the half is inferred from the actual scan time. */
+/**
+ * No manual session picker: the half is inferred from the actual scan time.
+ * Must use Asia/Manila explicitly — the server's PHP default timezone is
+ * Europe/Berlin, and date('H') in server-local time mislabeled afternoon
+ * scans (e.g. 3pm Manila = ~8am Berlin) as 'am'.
+ */
 function sports_auto_session(): string {
-    return (int)date('H') < 12 ? 'am' : 'pm';
+    $hour = (int)(new DateTimeImmutable('now', new DateTimeZone('Asia/Manila')))->format('H');
+    return $hour < 12 ? 'am' : 'pm';
+}
+
+/** Today's date in Asia/Manila — see sports_auto_session() for why. */
+function sports_today(): string {
+    return (new DateTimeImmutable('now', new DateTimeZone('Asia/Manila')))->format('Y-m-d');
 }
 
 /**
@@ -477,7 +488,7 @@ function sports_scan_record(PDO $conn, int $eventId, string $rawPayload, ?string
     $scannedByName = trim((string)($scannedBy['full_name'] ?? '')) ?: 'Unknown';
     $scannedByUserId = (int)($scannedBy['id'] ?? 0) ?: null;
 
-    $today = date('Y-m-d');
+    $today = sports_today();
     $scannedSession = sports_auto_session();
 
     $existingStmt = $conn->prepare('SELECT id, oid, session FROM tbl_sports_scan_log WHERE event_id = ? AND piid = ? AND scan_date = ? LIMIT 1');
